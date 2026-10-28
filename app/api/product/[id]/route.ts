@@ -3,7 +3,12 @@ import { Product } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NextResponse, NextRequest } from 'next/server';
 
+import { auth } from '@/auth';
+
 const prisma = new PrismaClient();
+
+const naoAutorizado = () =>
+  new NextResponse(JSON.stringify({ message: 'Não autorizado' }), { status: 401 });
 
 type FindById = {
 	id: string;
@@ -31,6 +36,7 @@ export async function GET(request: NextRequest, context: { params: FindById }) {
 }
 
 export async function PUT(request: NextRequest, context: { params: FindById }) {
+  if (!(await auth())) return naoAutorizado();
   const newProductData: Product = await request.json();
   try {
     const updatedProduct: Product = await prisma.product.update({
@@ -56,6 +62,7 @@ export async function DELETE(
   request: NextRequest,
   context: {params: FindById}
 ){
+  if (!(await auth())) return naoAutorizado();
   try{
     await prisma.product.delete({
       where: {
